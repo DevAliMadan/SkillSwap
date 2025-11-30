@@ -30,6 +30,10 @@ app.use('/user', userRoutes)
 app.use('/swap', swapRoutes)
 app.use('/skill', skillRoutes)
 
+require('./src/socket/socketHandlers')(io);
+
+app.use(require('./src/middleware/errorHandler'));
+
 app.listen(3000, () => {
     console.log('App is listening!')
 })
