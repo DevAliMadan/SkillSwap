@@ -5,12 +5,12 @@ const swapSchema  = new mongoose.Schema({
         user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
-            require: true
+            required: true
         },
         skill: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Skill',
-            require: true
+            required: true
         }
     },
     provider: {
