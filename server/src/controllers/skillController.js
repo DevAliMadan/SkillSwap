@@ -55,6 +55,7 @@ const deleteSkill = async (req, res) => {
 }
 
 const updateskill = async (req, res) => {
+    
     try {
         const skill = await skill.findByIdAndUpdate(req.params.id)
 
