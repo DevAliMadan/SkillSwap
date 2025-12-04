@@ -2,7 +2,7 @@ const User = require('../model/User')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 const sendEmail = require('../utils/sendEmail')
-const { profile } = require('console')
+const { profile, error } = require('console')
 
 const generateToken = (userId) => {
     return jwt.sign(
@@ -67,4 +67,82 @@ const register = async (req, res) => {
             error: error.massage
         })
     }
+}
+
+const login = async (req, res) => {
+    try {
+        const { email, password} = req.body
+
+        const user = await User.findOne({ email }).select('+password')
+
+        if (!user) {
+            return res.status(491).json({
+                success: false,
+                error: 'Invalid credential'
+            })
+        }
+
+        const isMatch = await user.comparePassword(password)
+
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                error: 'Invalid credential'
+            })
+        }
+
+        const token = generateToken(user._id)
+
+        res.status(201).json({
+            success: true,
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                profile: user.profile,
+                skills: user.skills
+            }
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.massage
+        })
+    }
+}
+
+const verifyEmail = async (req, res) => {
+    
+    try {
+        const { token } = req.params
+
+        const user = await User.findOne({ verificationToken: token })
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                error: 'Invalid verification token'
+            })
+        }
+
+        user.isVerified = true
+        user,verificationToken = undefined
+        await user.save()
+
+        res.json({
+            success: false,
+            massage: 'Email verified successfully'
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.massage
+        })
+    }
+}
+module.exports = {
+    register,
+    login,
+    verifyEmail
 }
