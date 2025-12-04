@@ -2,7 +2,6 @@ const User = require('../model/User')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 const sendEmail = require('../utils/sendEmail')
-const { profile, error } = require('console')
 
 const generateToken = (userId) => {
     return jwt.sign(
@@ -15,8 +14,14 @@ const generateToken = (userId) => {
 const register = async (req, res) => {
     
     try {
-        const { username, email, password, fistName, lastName } = req.body
+        const { username, email, password, firstName, lastName } = req.body
 
+        if (!username || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                error: 'username, email and password are required'
+            })
+        }
         const existingUser = await User.findOne({
             $or: [{ email }, { username }]
         })
@@ -24,17 +29,17 @@ const register = async (req, res) => {
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                error: 'User already exsist with this username or email'
+                error: 'User already exsists with this username or email'
             })
         }
 
         const verificationToken = crypto.randomBytes(20).toString('hex')
 
-        const user = await User.craete({
+        const user = await User.create({
             username,
             email,
             password,
-            profile: { fistName, lastName },
+            profile: { firstName, lastName },
             verificationToken
         })
 
@@ -43,9 +48,9 @@ const register = async (req, res) => {
             to: email,
             subject: 'Welcome to SkillSwap - Verify You Email',
             html: `
-                Welcome to SkillSwap!
-                Please click the link below to verify you email:
-                Verify Email
+                <p>Welcome to SkillSwap!</p>
+                <p>Please click the link below to verify you email:</p>
+                <p><a href="${verifyUrl}"Verify Email</p>
             `
         })
 
@@ -72,6 +77,13 @@ const register = async (req, res) => {
 const login = async (req, res) => {
     try {
         const { email, password} = req.body
+
+        if ( !email || !password) {
+            return res.status(400).json({
+                success: false,
+                error: 'Email and password are required'
+            })
+        }
 
         const user = await User.findOne({ email }).select('+password')
 
@@ -127,7 +139,7 @@ const verifyEmail = async (req, res) => {
         }
 
         user.isVerified = true
-        user,verificationToken = undefined
+        user.verificationToken = undefined
         await user.save()
 
         res.json({
