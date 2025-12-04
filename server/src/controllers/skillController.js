@@ -54,7 +54,7 @@ const deleteSkill = async (req, res) => {
     }
 }
 
-const updateskill = async (req, res) => {
+const updateSkill = async (req, res) => {
     
     try {
         const skill = await skill.findByIdAndUpdate(req.params.id)
@@ -69,10 +69,28 @@ const updateskill = async (req, res) => {
     }
 }
 
+const searchSkill = async (req, res) => {
+    const search = req.quary.q
+    try {
+        const skill = await skill.find( {name : { $regex: search, $optons: 'i'}})
+
+        if (skill){
+            res.status(200).json(skill)
+        } else{
+            res.sendStatus(404)
+        }
+    } catch (error) {
+        res.status(500).json({error: error.massage})
+    }
+}
+
+
+
 module.exports = {
     createSkill,
     allSkills,
     ShowSkill,
     deleteSkill,
-    updateskill
+    updateSkill,
+    searchSkill
 }

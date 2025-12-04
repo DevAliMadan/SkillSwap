@@ -81,6 +81,6 @@ const skillSchema = new mongoose.Schema({
     }
 })
 
-skillSchema.index({})
+skillSchema.index({ title: 'text', description: 'text', tags: 'text'})
 
 module.exports = mongoose.model('Skill', skillSchema)
