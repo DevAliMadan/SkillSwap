@@ -33,17 +33,20 @@ const register = async (req, res) => {
             })
         }
 
-        const verificationToken = crypto.randomBytes(20).toString('hex')
-
+        const verificationTokenPlain = crypto.randomBytes(20).toString('hex')
+        const verificationTokenHash = crypto.createHash('sha256').update(verificationTokenPlain).digest('hex')
+        const verificationTokenExpires = new Date(Date.now() + (process.env.VERIFICATION_TOKEN_EXPIRE_MS ? parseInt(process.env.VERIFICATION_TOKEN_EXPIRE_MS, 10) : 24 * 60 * 60 * 1000))
+        
         const user = await User.create({
             username,
             email,
             password,
             profile: { firstName, lastName },
-            verificationToken
+            verificationToken: verificationTokenHash,
+            verificationTokenExpires
         })
 
-        const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`
+        const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationTokenPlain}`
         await sendEmail({
             to: email,
             subject: 'Welcome to SkillSwap - Verify You Email',
@@ -128,8 +131,12 @@ const verifyEmail = async (req, res) => {
     
     try {
         const { token } = req.params
+        const tokenHash = crypto.createHash('sha256')
 
-        const user = await User.findOne({ verificationToken: token })
+        const user = await User.findOne({ 
+            verificationToken: tokenHash, 
+            verificationTokenExpires: {$gt: Date.now()}
+        })
 
         if (!user) {
             return res.status(401).json({
@@ -140,6 +147,7 @@ const verifyEmail = async (req, res) => {
 
         user.isVerified = true
         user.verificationToken = undefined
+        user.verificationTokenExpires = undefined
         await user.save()
 
         res.json({
