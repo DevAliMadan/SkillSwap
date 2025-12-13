@@ -1,8 +1,10 @@
 const Skill = require('../models/Skill')
+const User = require('../models/User')
 
 const createSkill = async (req, res) =>{
     try {
-        const createdSkill = await Skill.create(req.body)
+        const createdSkill = await Skill.create(...req.body, req.user._id)
+        await User.findByIdAndUpdate(req.user._id, { $push: { skills: createdSkill._id}})
         res.status(201).json(createdSkill)
     } catch (error) {
         console.log(error)
@@ -14,9 +16,9 @@ const createSkill = async (req, res) =>{
 const ShowSkill = async (req, res) => {
 
     try {
-        const oneSkill = await oneSkill.findById(req.params.id)
+        const oneSkill = await oneSkill.findById(req.params.id).populate( 'user', 'username profile')
         
-        if (oneSkill) {
+        if (!oneSkill) {
             res.status(200).json(oneSkill)
         } else{
             res.sendStatus(404)
